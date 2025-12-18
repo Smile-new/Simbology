@@ -77,17 +77,17 @@ function getShapePoints(shape) {
         let t = (i / particleCount) * Math.PI * 2;
         let x, y, z = (Math.random() - 0.5) * 30;
 
-        if (shape === '❤') {
+        if (shape === 'corazon') {
             x = 16 * Math.pow(Math.sin(t), 3);
             y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
             x *= 12; y *= 12;
         } 
-        else if (shape === '❤') {
+        else if (shape === 'estrella') {
             let r = 150 + 50 * Math.sin(t * 5);
             x = r * Math.cos(t);
             y = r * Math.sin(t);
         } 
-        else if (shape === 'necklace') {
+        else if (shape === 'collar') {
             if (i < particleCount * 0.8) {
                 let tChain = (i / (particleCount * 0.8)) * Math.PI * 1.5 - (Math.PI * 0.75);
                 x = 140 * Math.sin(tChain);
@@ -100,7 +100,7 @@ function getShapePoints(shape) {
                 z = 10;
             }
         } 
-        else if (shape === '❤') {
+        else if (shape === 'rosa') {
             let r = 180 * Math.cos(4 * t);
             x = r * Math.cos(t);
             y = r * Math.sin(t);
@@ -115,7 +115,7 @@ function init() {
     for (let i = 0; i < particleCount; i++) {
         particles.push(new Particle());
     }
-    updateParticleTargets('❤');
+    updateParticleTargets('corazon');
 }
 
 function updateParticleTargets(shape) {
