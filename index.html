@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geometric Soul</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="main.js" defer></script>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-links">
+            <button class="nav-item active" data-shape="heart" title="Corazón">
+                <span class="symbol">♥</span>
+            </button>
+            <button class="nav-item" data-shape="star" title="Estrella">
+                <span class="symbol">★</span>
+            </button>
+            <button class="nav-item" data-shape="necklace" title="Collar">
+    <span class="symbol">📿</span> 
+</button>
+            <button class="nav-item" data-shape="rose" title="Rosa">
+                <span class="symbol">🌹</span>
+            </button>
+        </div>
+    </nav>
+
+    <main class="canvas-container">
+        <canvas id="particleCanvas"></canvas>
+    </main>
+
+    <div class="vignette"></div>
+
+    <footer class="footer">
+        <div class="status">
+            <span class="pulse"></span>
+            <p>Para ti• <span id="current-shape"><3</span></p>
+        </div>
+    </footer>
+
+</body>
+</html>
