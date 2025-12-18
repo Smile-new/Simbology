@@ -3,42 +3,49 @@ const ctx = canvas.getContext('2d');
 const currentShapeText = document.getElementById('current-shape');
 const buttons = document.querySelectorAll('.nav-item');
 
+// --- OPTIMIZACIÓN 1: Detectar móvil y reducir partículas ---
+const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+const particleCount = isMobile ? 400 : 800; 
 let particles = [];
-const particleCount = 800; // Cantidad de corazoncitos pequeños
-let currentShape = 'heart';
-let rotationY = 0;
-
-// Configuración de colores (Paleta Azul Mar y Blanco)
 const colors = ['#124559', '#598392', '#aec3b0', '#ffffff'];
 
-// Ajustar canvas al tamaño de la pantalla
+// --- OPTIMIZACIÓN 2: Pre-renderizar el corazón (Sprite) ---
+const heartSprite = document.createElement('canvas');
+const sCtx = heartSprite.getContext('2d');
+heartSprite.width = 40;
+heartSprite.height = 40;
+sCtx.fillStyle = '#ffffff';
+sCtx.font = '30px serif';
+sCtx.textAlign = 'center';
+sCtx.textBaseline = 'middle';
+sCtx.fillText('♥', 20, 20);
+
 function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    // Limitamos el pixel ratio para evitar resoluciones excesivas en móviles
+    const dpr = Math.min(window.devicePixelRatio, 2);
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+    ctx.scale(dpr, dpr);
 }
 window.addEventListener('resize', resize);
 resize();
 
-// Clase Partícula
 class Particle {
     constructor() {
-        this.x = Math.random() * canvas.width;
-        this.y = Math.random() * canvas.height;
+        this.x = Math.random() * window.innerWidth;
+        this.y = Math.random() * window.innerHeight;
         this.z = Math.random() * 400 - 200;
-        
         this.targetX = 0;
         this.targetY = 0;
         this.targetZ = 0;
-        
-        this.size = Math.random() * 10 + 5;
+        this.size = Math.random() * 8 + 4;
         this.color = colors[Math.floor(Math.random() * colors.length)];
-        this.speed = 0.05 + Math.random() * 0.03;
+        this.speed = isMobile ? 0.08 : 0.05; // Más rápido en móvil para compensar frames
     }
 
     update() {
-        // Rotación 3D simple en el eje Y
-        let cosY = Math.cos(0.01);
-        let sinY = Math.sin(0.01);
+        let cosY = 0.9998; // Valores pre-calculados de rotación sutil
+        let sinY = 0.015;
         
         let x = this.targetX * cosY - this.targetZ * sinY;
         let z = this.targetZ * cosY + this.targetX * sinY;
@@ -46,28 +53,24 @@ class Particle {
         this.targetX = x;
         this.targetZ = z;
 
-        // Movimiento suave hacia el objetivo (Lerp)
-        this.x += (this.targetX + canvas.width / 2 - this.x) * this.speed;
-        this.y += (this.targetY + canvas.height / 2 - this.y) * this.speed;
+        this.x += (this.targetX + window.innerWidth / 2 - this.x) * this.speed;
+        this.y += (this.targetY + window.innerHeight / 2 - this.y) * this.speed;
         this.z += (this.targetZ - this.z) * this.speed;
     }
 
     draw() {
-        // Proyección de perspectiva simple
         const perspective = 400 / (400 + this.z);
-        const drawX = this.x;
-        const drawY = this.y;
         const size = this.size * perspective;
-
-        ctx.globalAlpha = Math.min(Math.max(perspective, 0.2), 1);
-        ctx.fillStyle = this.color;
-        ctx.font = `${size}px serif`;
-        ctx.fillText('♥', drawX, drawY); // Cada partícula es un corazón
+        
+        ctx.globalAlpha = Math.max(perspective, 0.3);
+        
+        // --- OPTIMIZACIÓN 3: Usar drawImage en lugar de fillText ---
+        // Esto usa la tarjeta de video (GPU) de forma mucho más eficiente
+        ctx.drawImage(heartSprite, this.x - size/2, this.y - size/2, size, size);
     }
 }
 
-// Generador de formas (Ecuaciones matemáticas para las siluetas)
-// Generador de formas (Ecuaciones matemáticas para las siluetas)
+// (La función getShapePoints se mantiene igual que la anterior)
 function getShapePoints(shape) {
     let points = [];
     for (let i = 0; i < particleCount; i++) {
@@ -85,18 +88,15 @@ function getShapePoints(shape) {
             y = r * Math.sin(t);
         } 
         else if (shape === 'necklace') {
-            // --- Lógica del Collar ---
             if (i < particleCount * 0.8) {
-                // La cadena (forma de U/Teardrop)
                 let tChain = (i / (particleCount * 0.8)) * Math.PI * 1.5 - (Math.PI * 0.75);
                 x = 140 * Math.sin(tChain);
                 y = 160 * Math.cos(tChain) - 100;
-                z = Math.sin(tChain * 2) * 20; // Un poco de curvatura en Z
+                z = Math.sin(tChain * 2) * 20;
             } else {
-                // El colgante (un pequeño rombo/diamante al final)
                 let tGem = (i / (particleCount * 0.2)) * Math.PI * 2;
                 x = 15 * Math.cos(tGem);
-                y = 15 * Math.sin(tGem) + 65; // Posicionado al fondo del collar
+                y = 15 * Math.sin(tGem) + 65;
                 z = 10;
             }
         } 
@@ -105,14 +105,13 @@ function getShapePoints(shape) {
             x = r * Math.cos(t);
             y = r * Math.sin(t);
         }
-
         points.push({ x, y, z });
     }
     return points;
 }
 
-// Inicializar partículas
 function init() {
+    particles = [];
     for (let i = 0; i < particleCount; i++) {
         particles.push(new Particle());
     }
@@ -128,24 +127,19 @@ function updateParticleTargets(shape) {
     }
 }
 
-// Bucle de animación
 function animate() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    particles.forEach(p => {
-        p.update();
-        p.draw();
-    });
-    
+    for (let i = 0; i < particles.length; i++) {
+        particles[i].update();
+        particles[i].draw();
+    }
     requestAnimationFrame(animate);
 }
 
-// Eventos de los botones
 buttons.forEach(btn => {
     btn.addEventListener('click', () => {
         buttons.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        
         const shape = btn.getAttribute('data-shape');
         currentShapeText.textContent = shape.charAt(0).toUpperCase() + shape.slice(1);
         updateParticleTargets(shape);
